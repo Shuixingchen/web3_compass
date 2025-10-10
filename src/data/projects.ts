@@ -67,7 +67,8 @@ export const projects: Web3Project[] = [
     subcategory: 'dex',
     url: 'https://uniswap.org',
     tags: ['DEX', 'AMM', 'Ethereum'],
-    featured: true,
+    chains: ['Ethereum', 'Polygon', 'Arbitrum', 'Optimism', 'Base'],
+    viewCount: 15420,
     officialLinks: {
       website: 'https://uniswap.org',
       whitepaper: 'https://uniswap.org/whitepaper-v3.pdf',
@@ -89,7 +90,7 @@ export const projects: Web3Project[] = [
       {
         id: 'uni-2',
         title: '单日交易量突破 20 亿美元',
-        summary: 'Uniswap 协议在昨日创下新的里程碑，单日交易量首次突破 20 亿美元，显示了 DeFi 市场的强劲增长。',
+        summary: 'Uniswap 协议在昨日acee创建新的里程碑，单日交易量首次突破 20 亿美元，显示了 DeFi 市场的强劲增长。',
         publishedAt: '2024-01-12T14:20:00Z',
         url: 'https://uniswap.org/blog/record-trading-volume',
         source: 'Uniswap Blog'
@@ -129,7 +130,8 @@ export const projects: Web3Project[] = [
     subcategory: 'lending',
     url: 'https://aave.com',
     tags: ['借贷', 'DeFi', '流动性'],
-    featured: true,
+    chains: ['Ethereum', 'Polygon', 'Avalanche', 'Arbitrum', 'Optimism', 'Base'],
+    viewCount: 12850,
     officialLinks: {
       website: 'https://aave.com',
       whitepaper: 'https://github.com/aave/aave-protocol/blob/master/docs/Aave_Protocol_Whitepaper_v1_0.pdf',
@@ -181,7 +183,9 @@ export const projects: Web3Project[] = [
     category: 'defi',
     subcategory: 'lending',
     url: 'https://compound.finance',
-    tags: ['借贷', 'DeFi', '利率']
+    tags: ['借贷', 'DeFi', '利率'],
+    chains: ['Ethereum', 'Polygon'],
+    viewCount: 8920
   },
   {
     id: '4',
@@ -190,7 +194,9 @@ export const projects: Web3Project[] = [
     category: 'defi',
     subcategory: 'yield',
     url: 'https://yearn.finance',
-    tags: ['收益农场', 'DeFi', '自动化']
+    tags: ['收益农场', 'DeFi', '自动化'],
+    chains: ['Ethereum', 'Fantom', 'Arbitrum'],
+    viewCount: 7650
   },
   
   // NFT Projects
@@ -203,7 +209,8 @@ export const projects: Web3Project[] = [
     subcategory: 'marketplace',
     url: 'https://opensea.io',
     tags: ['NFT', '市场', 'Ethereum'],
-    featured: true,
+    chains: ['Ethereum', 'Polygon', 'Klaytn', 'Solana'],
+    viewCount: 18750,
     officialLinks: {
       website: 'https://opensea.io',
       twitter: 'https://twitter.com/opensea',
@@ -253,7 +260,9 @@ export const projects: Web3Project[] = [
     category: 'nft',
     subcategory: 'gaming',
     url: 'https://axieinfinity.com',
-    tags: ['游戏', 'NFT', 'Play-to-Earn']
+    tags: ['游戏', 'NFT', 'Play-to-Earn'],
+    chains: ['Ronin', 'Ethereum'],
+    viewCount: 9340
   },
   {
     id: '7',
@@ -262,7 +271,9 @@ export const projects: Web3Project[] = [
     category: 'nft',
     subcategory: 'art',
     url: 'https://superrare.com',
-    tags: ['艺术', 'NFT', '收藏品']
+    tags: ['艺术', 'NFT', '收藏品'],
+    chains: ['Ethereum'],
+    viewCount: 5680
   },
   
   // Infrastructure Projects
@@ -270,12 +281,13 @@ export const projects: Web3Project[] = [
     id: '8',
     name: 'Ethereum',
     description: '智能合约区块链平台',
-    detailedDescription: 'Ethereum是一个开源的区块链平台，支持智能合约功能，由Vitalik Buterin在2013年提出，并于2015年正式启动。作为第二大加密货币平台，Ethereum不仅仅是一种数字货币，更是一个完整的去中心化应用（DApp）生态系统。Ethereum的核心创新是引入了图灵完备的虚拟机（EVM），使开发者能够在区块链上构建和部署复杂的智能合约。这些智能合约是自动执行的程序，当预定条件满足时会自动执行，无需第三方干预。Ethereum为整个DeFi（去中心化金融）生态系统奠定了基础，支持了数千个去中心化应用，包括去中心化交易所、借贷协议、NFT市场等。2022年，Ethereum成功完成了从工作量证明（PoW）到权益证明（PoS）的重大升级，这次被称为"The Merge"的升级大大降低了网络的能源消耗。Ethereum的原生代币ETH不仅用作交易费用（Gas费），还在PoS机制中用于质押以维护网络安全。Ethereum持续发展，计划通过分片等技术进一步提高可扩展性，以支持更大规模的应用。',
+    detailedDescription: 'Ethereum是一个开源的区块链平台，支持智能合约功能，由Vitalik Buterin在2013年提出，并于2015年正式启动。作为第二大加密货币平台，Ethereum不仅仅是一种数字货币，更是一个完整的去中心化应用（DApp）生态系统。Ethereum的核心创新是引入了图灵完备的虚拟机（EVM），使开发者能够在区块链上构建和部署复杂的智能合约。这些智能合约是自动执行的程序，当预定条件满足时会自动执行，无需第三方干预。Ethereum为整个DeFi（去中心化金融）生态系统奠定了基础，支持了数千个去中心化应用，包括去中心化交易所、借贷协议、NFT市场等。2022年，Ethereum成功完成了从工作量证明（PoW）到权益证明（PoS）的重要升级，这次被称为"The Merge"的升级大大降低了网络的能源消耗。Ethereum的原生代币ETH不仅用作交易费用（Gas费），还在PoS机制中用于质押以维护网络安全。Ethereum持续发展，计划通过分片等技术进一步提高可扩展性，以支持更大规模的应用。',
     category: 'infrastructure',
     subcategory: 'blockchain',
     url: 'https://ethereum.org',
     tags: ['区块链', '智能合约', 'Layer 1'],
-    featured: true,
+    chains: ['Ethereum'],
+    viewCount: 22100,
     officialLinks: {
       website: 'https://ethereum.org',
       whitepaper: 'https://ethereum.org/en/whitepaper/',
@@ -334,7 +346,8 @@ export const projects: Web3Project[] = [
     subcategory: 'wallet',
     url: 'https://metamask.io',
     tags: ['钱包', '浏览器扩展', 'Web3'],
-    featured: true
+    chains: ['Ethereum', 'BSC', 'Polygon', 'Avalanche', 'Arbitrum', 'Optimism'],
+    viewCount: 16890
   },
   {
     id: '10',
@@ -343,7 +356,9 @@ export const projects: Web3Project[] = [
     category: 'infrastructure',
     subcategory: 'blockchain',
     url: 'https://polygon.technology',
-    tags: ['Layer 2', '扩容', 'Ethereum']
+    tags: ['Layer 2', '扩容', 'Ethereum'],
+    chains: ['Polygon', 'Ethereum'],
+    viewCount: 11250
   },
   {
     id: '11',
@@ -352,10 +367,10 @@ export const projects: Web3Project[] = [
     category: 'infrastructure',
     subcategory: 'oracle',
     url: 'https://chain.link',
-    tags: ['预言机', '数据', 'DeFi']
+    tags: ['预言机', '数据', 'DeFi'],
+    chains: ['Ethereum', 'BSC', 'Polygon', 'Avalanche', 'Arbitrum', 'Optimism', 'Fantom'],
+    viewCount: 9870
   },
-  
-  // DAO Projects
   {
     id: '12',
     name: 'MakerDAO',
@@ -363,7 +378,9 @@ export const projects: Web3Project[] = [
     category: 'dao',
     subcategory: 'governance',
     url: 'https://makerdao.com',
-    tags: ['DAO', '稳定币', '治理']
+    tags: ['DAO', '稳定币', '治理'],
+    chains: ['Ethereum'],
+    viewCount: 6420
   },
   {
     id: '13',
@@ -372,10 +389,10 @@ export const projects: Web3Project[] = [
     category: 'dao',
     subcategory: 'governance',
     url: 'https://aragon.org',
-    tags: ['DAO', '治理', '工具']
+    tags: ['DAO', '治理', '工具'],
+    chains: ['Ethereum', 'Polygon', 'Arbitrum'],
+    viewCount: 4580
   },
-  
-  // Tools Projects
   {
     id: '14',
     name: 'Etherscan',
@@ -383,7 +400,9 @@ export const projects: Web3Project[] = [
     category: 'tools',
     subcategory: 'analytics',
     url: 'https://etherscan.io',
-    tags: ['区块链浏览器', '分析', 'Ethereum']
+    tags: ['区块链浏览器', '分析', 'Ethereum'],
+    chains: ['Ethereum'],
+    viewCount: 13670
   },
   {
     id: '15',
@@ -392,7 +411,9 @@ export const projects: Web3Project[] = [
     category: 'tools',
     subcategory: 'development',
     url: 'https://hardhat.org',
-    tags: ['开发工具', '测试', 'Solidity']
+    tags: ['开发工具', '测试', 'Solidity'],
+    chains: ['Ethereum'],
+    viewCount: 7890
   },
   {
     id: '16',
@@ -401,6 +422,8 @@ export const projects: Web3Project[] = [
     category: 'tools',
     subcategory: 'development',
     url: 'https://remix.ethereum.org',
-    tags: ['IDE', 'Solidity', '开发']
+    tags: ['IDE', 'Solidity', '开发'],
+    chains: ['Ethereum'],
+    viewCount: 6230
   }
 ];

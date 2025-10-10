@@ -7,6 +7,17 @@ export interface ProjectNews {
   source?: string;
 }
 
+export interface Tag {
+  id: string;
+  name: string;
+  category?: string;
+  description?: string;
+  color?: string;
+  usageCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Web3Project {
   id: string;
   name: string;
@@ -16,8 +27,9 @@ export interface Web3Project {
   subcategory?: string;
   url: string;
   logo?: string;
-  tags: string[];
-  featured?: boolean;
+  tags: string[]; // 项目标签数组，存储为JSON格式
+  chains: string[]; // 项目所属的区块链数组
+  viewCount: number; // 项目浏览次数
   news?: ProjectNews[]; // 项目相关新闻
   officialLinks?: {
     website?: string;

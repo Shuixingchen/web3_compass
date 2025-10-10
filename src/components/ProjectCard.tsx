@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, Star, Heart } from 'lucide-react';
+import { ExternalLink, Eye, Heart, Link } from 'lucide-react';
 import { Web3Project } from '@/types';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -64,12 +64,10 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
               {project.name}
             </h3>
-            {project.featured && (
-              <div className="flex items-center space-x-1 mt-1">
-                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                <span className="text-xs text-yellow-600 font-medium">推荐</span>
-              </div>
-            )}
+            <div className="flex items-center space-x-1 mt-1">
+              <Eye className="w-4 h-4 text-gray-500" />
+              <span className="text-xs text-gray-600 font-medium">{project.viewCount.toLocaleString()} 次浏览</span>
+            </div>
           </div>
         </div>
       </div>
@@ -78,8 +76,29 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         {project.description}
       </p>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        {project.tags.map((tag, index) => (
+      {/* Chains 显示 */}
+      {project.chains && project.chains.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center space-x-1 mb-2">
+            <Link className="w-3 h-3 text-gray-500" />
+            <span className="text-xs text-gray-500 font-medium">支持链</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {project.chains.map((chain, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200"
+              >
+                {chain}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <div className="flex flex-wrap gap-2 mb-4">
+           {project.tags.map((tag, index) => (
           <span
             key={index}
             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
@@ -87,19 +106,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             {tag}
           </span>
         ))}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-500">
-          {project.subcategory && (
-            <span className="capitalize">{project.subcategory}</span>
-          )}
         </div>
         <button
           onClick={handleVisit}
           className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
         >
-          访问
           <ExternalLink className="w-3 h-3 ml-1" />
         </button>
       </div>

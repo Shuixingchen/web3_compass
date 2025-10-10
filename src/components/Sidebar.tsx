@@ -3,17 +3,18 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Menu, X } from 'lucide-react';
 import { Category } from '@/types';
-import { categories } from '@/data/projects';
 import Tooltip from './Tooltip';
 import clsx from 'clsx';
 
 interface SidebarProps {
+  categories: Category[];
   selectedCategory: string;
   selectedSubcategory: string;
   onCategoryChange: (category: string, subcategory?: string) => void;
 }
 
 export default function Sidebar({ 
+  categories,
   selectedCategory, 
   selectedSubcategory, 
   onCategoryChange 
