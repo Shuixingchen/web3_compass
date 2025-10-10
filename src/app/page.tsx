@@ -1,103 +1,174 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useMemo } from 'react';
+import Sidebar from '@/components/Sidebar';
+import SearchBar from '@/components/SearchBar';
+import FilterDropdown from '@/components/FilterDropdown';
+import ProjectCard from '@/components/ProjectCard';
+import { projects, categories } from '@/data/projects';
+import { Web3Project } from '@/types';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('name');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // 筛选和搜索逻辑
+  const filteredProjects = useMemo(() => {
+    let filtered = projects;
+
+    // 按分类筛选
+    if (selectedCategory) {
+      filtered = filtered.filter(project => project.category === selectedCategory);
+    }
+
+    // 按子分类筛选
+    if (selectedSubcategory) {
+      filtered = filtered.filter(project => project.subcategory === selectedSubcategory);
+    }
+
+    // 搜索筛选
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(project => 
+        project.name.toLowerCase().includes(term) ||
+        project.description.toLowerCase().includes(term) ||
+        project.tags.some(tag => tag.toLowerCase().includes(term))
+      );
+    }
+
+    // 排序
+    filtered.sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === 'featured') {
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return a.name.localeCompare(b.name);
+      }
+      return 0;
+    });
+
+    return filtered;
+  }, [selectedCategory, selectedSubcategory, searchTerm, sortBy]);
+
+  const handleCategoryChange = (category: string, subcategory?: string) => {
+    setSelectedCategory(category);
+    setSelectedSubcategory(subcategory || '');
+  };
+
+  // 排序选项
+  const sortOptions = [
+    { id: 'name', name: '按名称排序' },
+    { id: 'featured', name: '推荐优先' }
+  ];
+
+  // 链选项
+  const chainOptions = [
+    { id: 'all', name: '全部链' },
+    { id: 'ethereum', name: 'Ethereum' },
+    { id: 'bsc', name: 'BSC' },
+    { id: 'polygon', name: 'Polygon' },
+    { id: 'arbitrum', name: 'Arbitrum' },
+    { id: 'optimism', name: 'Optimism' }
+  ];
+
+  // 目录选项
+  const directoryOptions = [
+    { id: 'all', name: '全部目录' },
+    { id: 'defi', name: 'DeFi' },
+    { id: 'nft', name: 'NFT' },
+    { id: 'dao', name: 'DAO' },
+    { id: 'infrastructure', name: '基础设施' },
+    { id: 'tools', name: '工具' }
+  ];
+
+  const [selectedChain, setSelectedChain] = useState('all');
+  const [selectedDirectory, setSelectedDirectory] = useState('all');
+
+  // 获取当前分类信息
+  const currentCategory = categories.find(cat => cat.id === selectedCategory);
+  const categoryName = selectedCategory ? currentCategory?.name : '全部项目';
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      {/* 左侧导航栏 */}
+      <Sidebar
+        selectedCategory={selectedCategory}
+        selectedSubcategory={selectedSubcategory}
+        onCategoryChange={handleCategoryChange}
+      />
+
+      {/* 主内容区域 */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* 顶部搜索和筛选栏 */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            {/* 搜索框区域 */}
+            <div className="flex justify-center mb-6">
+              <div className="w-full max-w-3xl">
+                <SearchBar
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  placeholder="搜索Web3项目、DeFi、NFT、DAO..."
+                />
+              </div>
+            </div>
+            
+            {/* 筛选选项区域 */}
+            <div className="flex flex-wrap justify-center gap-4">
+              <FilterDropdown
+                label="Chain"
+                options={chainOptions}
+                selected={selectedChain}
+                onSelect={setSelectedChain}
+              />
+              <FilterDropdown
+                label="目录"
+                options={directoryOptions}
+                selected={selectedDirectory}
+                onSelect={setSelectedDirectory}
+              />
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* 项目列表 */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            {/* 页面标题和统计 */}
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {categoryName}
+              </h1>
+              <p className="text-gray-600">
+                找到 {filteredProjects.length} 个项目
+                {searchTerm && ` · 搜索 "${searchTerm}"`}
+              </p>
+            </div>
+
+            {/* 项目网格 */}
+            {filteredProjects.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProjects.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">🔍</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  没有找到匹配的项目
+                </h3>
+                <p className="text-gray-600">
+                  尝试调整搜索条件或浏览其他分类
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
