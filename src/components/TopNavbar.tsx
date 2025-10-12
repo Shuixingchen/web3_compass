@@ -20,6 +20,7 @@ interface User {
 const navItems: NavItem[] = [
   { id: 'home', name: '首页', href: '/' },
   { id: 'explore', name: '探索', href: '/explore' },
+  { id: 'add-project', name: '添加项目', href: '/add-project' },
   { id: 'news', name: '新闻', href: '/news' },
   { id: 'docs', name: '文档', href: '/docs' },
   { id: 'about', name: '关于', href: '/about' }

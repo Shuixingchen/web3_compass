@@ -1,0 +1,84 @@
+[
+  {
+    "name": "Uniswap",
+    "description": "去中心化交易协议，支持自动化做市商（AMM）模式",
+    "detailedDescription": "Uniswap是以太坊上最大的去中心化交易所，采用自动化做市商（AMM）模式，允许用户在没有传统订单簿的情况下交易ERC-20代币。用户可以通过提供流动性来赚取交易费用。",
+    "category": "defi",
+    "subcategory": "dex",
+    "url": "https://uniswap.org",
+    "logo": "https://uniswap.org/logo.png",
+    "tags": ["DEX", "AMM", "流动性挖矿", "DeFi"],
+    "chains": ["ethereum", "polygon", "arbitrum", "optimism"],
+    "officialLinks": {
+      "twitter": "https://twitter.com/Uniswap",
+      "github": "https://github.com/Uniswap",
+      "discord": "https://discord.gg/FCfyBSbCU5",
+      "telegram": "https://t.me/UniswapProtocol"
+    }
+  },
+  {
+    "name": "Aave",
+    "description": "开源的去中心化借贷协议",
+    "detailedDescription": "Aave是一个去中心化的非托管流动性市场协议，用户可以参与作为存款人或借款人。存款人向市场提供流动性以赚取被动收入，而借款人能够以超额抵押（永久）或欠额抵押（一次性流动性）的方式借款。",
+    "category": "defi",
+    "subcategory": "lending",
+    "url": "https://aave.com",
+    "logo": "https://aave.com/logo.svg",
+    "tags": ["借贷", "流动性", "收益农场", "DeFi"],
+    "chains": ["ethereum", "polygon", "avalanche"],
+    "officialLinks": {
+      "twitter": "https://twitter.com/AaveAave",
+      "github": "https://github.com/aave",
+      "discord": "https://discord.gg/CvKUrqM"
+    }
+  },
+  {
+    "name": "OpenSea",
+    "description": "全球最大的NFT市场",
+    "detailedDescription": "OpenSea是世界上第一个也是最大的数字商品市场。在OpenSea上买卖加密收藏品、游戏物品、数字艺术品等。",
+    "category": "nft",
+    "subcategory": "marketplace",
+    "url": "https://opensea.io",
+    "logo": "https://opensea.io/static/images/logos/opensea-logo.svg",
+    "tags": ["NFT", "市场", "收藏品", "艺术"],
+    "chains": ["ethereum", "polygon", "klaytn", "solana"],
+    "officialLinks": {
+      "twitter": "https://twitter.com/opensea",
+      "instagram": "https://www.instagram.com/opensea",
+      "discord": "https://discord.gg/opensea"
+    }
+  },
+  {
+    "name": "MetaMask",
+    "description": "以太坊钱包和Web3网关",
+    "detailedDescription": "MetaMask是一个加密钱包和Web3应用程序的网关。它允许用户管理以太坊账户并与去中心化应用程序交互。",
+    "category": "infrastructure",
+    "subcategory": "wallet",
+    "url": "https://metamask.io",
+    "logo": "https://metamask.io/images/metamask-logo.png",
+    "tags": ["钱包", "浏览器扩展", "Web3", "以太坊"],
+    "chains": ["ethereum", "bsc", "polygon", "avalanche"],
+    "officialLinks": {
+      "twitter": "https://twitter.com/MetaMask",
+      "github": "https://github.com/MetaMask",
+      "support": "https://metamask.zendesk.com"
+    }
+  },
+  {
+    "name": "Chainlink",
+    "description": "去中心化预言机网络",
+    "detailedDescription": "Chainlink是一个去中心化的预言机网络，为智能合约提供现实世界的数据。它连接区块链与外部数据源、API和传统银行支付系统。",
+    "category": "infrastructure",
+    "subcategory": "oracle",
+    "url": "https://chain.link",
+    "logo": "https://chain.link/logo.png",
+    "tags": ["预言机", "数据", "智能合约", "基础设施"],
+    "chains": ["ethereum", "bsc", "polygon", "avalanche", "fantom"],
+    "officialLinks": {
+      "twitter": "https://twitter.com/chainlink",
+      "github": "https://github.com/smartcontractkit",
+      "telegram": "https://t.me/chainlinkofficial",
+      "reddit": "https://www.reddit.com/r/Chainlink"
+    }
+  }
+]
