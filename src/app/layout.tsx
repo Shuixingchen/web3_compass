@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import TopNavbar from "@/components/TopNavbar";
+import AuthSessionProvider from "@/components/SessionProvider";
 
 export const metadata: Metadata = {
   title: "Web3 导航 - 发现最优秀的Web3项目",
@@ -34,8 +35,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="antialiased">
-        <TopNavbar />
-        {children}
+        <AuthSessionProvider>
+          <TopNavbar />
+          {children}
+        </AuthSessionProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, User, LogIn, LogOut, Settings, Bell, ChevronDown } from 'lucide-react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 interface NavItem {
   id: string;
@@ -20,28 +21,30 @@ interface User {
 const navItems: NavItem[] = [
   { id: 'home', name: '首页', href: '/' },
   { id: 'explore', name: '探索', href: '/explore' },
-  { id: 'add-project', name: '添加项目', href: '/add-project' },
   { id: 'news', name: '新闻', href: '/news' },
   { id: 'docs', name: '文档', href: '/docs' },
   { id: 'about', name: '关于', href: '/about' }
 ];
 
 // 第三方登录组件
-function LoginModal({ isOpen, onClose, onLogin }: { 
+function LoginModal({ isOpen, onClose }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  onLogin: (provider: string) => void; 
 }) {
   if (!isOpen) return null;
 
-  const handleGoogleLogin = () => {
-    // 这里将来可以集成真实的 Google OAuth
-    onLogin('google');
+  const handleGoogleLogin = async () => {
+    try {
+      await signIn('google');
+      onClose();
+    } catch (error) {
+      console.error('Google登录失败:', error);
+    }
   };
 
   const handleGitHubLogin = () => {
-    // 这里将来可以集成真实的 GitHub OAuth
-    onLogin('github');
+    // GitHub OAuth 暂未配置
+    console.log('GitHub登录暂未配置');
   };
 
   return (
@@ -105,30 +108,29 @@ function LoginModal({ isOpen, onClose, onLogin }: {
 }
 
 export default function TopNavbar() {
+  const { data: session, status } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  // 模拟用户数据
-  const user: User = {
-    id: '1',
-    name: '张三',
-    email: 'zhangsan@example.com',
-    avatar: undefined
-  };
+  const isLoggedIn = status === 'authenticated';
+  const isLoading = status === 'loading';
+  
+  // 用户数据来自session
+  const user = session?.user ? {
+    id: session.user.email || '',
+    name: session.user.name || '用户',
+    email: session.user.email || '',
+    avatar: session.user.image
+  } : null;
 
-  const handleLogin = (provider: string) => {
-    // 模拟登录成功
-    console.log(`使用 ${provider} 登录`);
-    setIsLoggedIn(true);
-    setIsLoginModalOpen(false);
-    setIsUserMenuOpen(false);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setIsUserMenuOpen(false);
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setIsUserMenuOpen(false);
+    } catch (error) {
+      console.error('退出登录失败:', error);
+    }
   };
 
   const openLoginModal = () => {
@@ -178,7 +180,7 @@ export default function TopNavbar() {
 
             {/* User Menu or Login */}
             <div className="relative">
-              {isLoggedIn ? (
+              {isLoggedIn && user ? (
                 <div>
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -228,6 +230,10 @@ export default function TopNavbar() {
                       </button>
                     </div>
                   )}
+                </div>
+              ) : isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
                 </div>
               ) : (
                 <div className="flex items-center">
@@ -293,7 +299,6 @@ export default function TopNavbar() {
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={closeLoginModal} 
-        onLogin={handleLogin} 
       />
 
       {/* Overlay for user menu */}

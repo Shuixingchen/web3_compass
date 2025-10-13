@@ -54,8 +54,8 @@ CREATE TABLE `web3_projects` (
   `name` varchar(200) NOT NULL COMMENT '项目名称',
   `description` text NOT NULL COMMENT '项目简介',
   `detailed_description` longtext DEFAULT NULL COMMENT '详细介绍',
-  `category` varchar(50) NOT NULL COMMENT '主分类',
-  `subcategory` varchar(50) DEFAULT NULL COMMENT '子分类',
+  `category` bigint(20) unsigned NOT NULL COMMENT '主分类ID',
+  `subcategory` bigint(20) unsigned DEFAULT NULL COMMENT '子分类ID',
   `url` varchar(500) NOT NULL COMMENT '官方网站',
   `logo` varchar(500) DEFAULT NULL COMMENT 'Logo URL',
   `view_count` int(11) NOT NULL DEFAULT 0 COMMENT '浏览次数',
@@ -69,7 +69,9 @@ CREATE TABLE `web3_projects` (
   KEY `idx_projects_subcategory` (`subcategory`),
   KEY `idx_projects_view_count` (`view_count`),
   KEY `idx_projects_created_at` (`created_at`),
-  FULLTEXT KEY `ft_projects_search` (`name`, `description`)
+  FULLTEXT KEY `ft_projects_search` (`name`, `description`),
+  CONSTRAINT `fk_projects_category` FOREIGN KEY (`category`) REFERENCES `web3_categories` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_projects_subcategory` FOREIGN KEY (`subcategory`) REFERENCES `web3_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='项目表';
 
 -- ================================
