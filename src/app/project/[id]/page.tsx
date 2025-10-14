@@ -3,13 +3,14 @@ import { getProjectById } from '@/lib/data-access';
 import ProjectDetailClient from './ProjectDetailClient';
 
 interface ProjectDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
-  const project = await getProjectById(params.id);
+  const { id } = await params;
+  const project = await getProjectById(id);
 
   if (!project) {
     notFound();

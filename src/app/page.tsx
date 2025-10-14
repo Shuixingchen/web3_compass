@@ -1,11 +1,17 @@
 import { Suspense } from 'react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from './api/auth/[...nextauth]/route';
 import { getProjects, getCategories } from '@/lib/data-access';
 import HomeClient from './HomeClient';
 
 export default async function Home() {
+  // 获取用户会话信息
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id as string | undefined;
+
   // 在服务器端获取数据
   const [projects, categories] = await Promise.all([
-    getProjects(),
+    getProjects(userId),
     getCategories()
   ]);
   return (

@@ -74,9 +74,9 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* 左侧主要内容 */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-3 space-y-8">
             {/* 项目头部信息 */}
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <div className="flex items-start justify-between mb-6">
@@ -142,36 +142,11 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
               </button>
             </div>
 
-            {/* 详细介绍 */}
-            {project.detailedDescription && (
-              <div className="bg-white rounded-2xl shadow-lg p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">项目介绍</h2>
-                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                  {project.detailedDescription.split('\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 项目新闻 */}
-            {project.news && project.news.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">最新动态</h2>
-                <ProjectNewsList news={project.news} projectName={project.name} />
-              </div>
-            )}
-          </div>
-
-          {/* 右侧边栏 */}
-          <div className="space-y-6">
             {/* 官方链接 */}
             {project.officialLinks && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">官方链接</h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {Object.entries(project.officialLinks).map(([type, url]) => (
                     url && (
                       <a
@@ -179,7 +154,7 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group border border-gray-100"
                       >
                         <div className="text-gray-500 group-hover:text-blue-600 transition-colors">
                           {getLinkIcon(type)}
@@ -195,37 +170,25 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
               </div>
             )}
 
-            {/* 项目统计 */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">项目信息</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">分类</span>
-                  <span className="font-medium text-gray-900">{project.category}</span>
+            {/* 详细介绍 */}
+            {project.detailedDescription && (
+              <div className="bg-white rounded-2xl shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">项目介绍</h2>
+                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                  {project.detailedDescription.split('\n').map((paragraph, index) => (
+                    <p key={index} className="mb-4">
+                      {paragraph}
+                    </p>
+                  ))}
                 </div>
-                {project.subcategory && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">子分类</span>
-                    <span className="font-medium text-gray-900">{project.subcategory}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">标签数量</span>
-                  <span className="font-medium text-gray-900">{project.tags.length}</span>
-                </div>
-                {project.chains && project.chains.length > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">支持链数量</span>
-                    <span className="font-medium text-gray-900">{project.chains.length}</span>
-                  </div>
-                )}
-                {project.news && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">新闻数量</span>
-                    <span className="font-medium text-gray-900">{project.news.length}</span>
-                  </div>
-                )}
               </div>
+            )}
+          </div>
+
+          {/* 右侧新闻列表 */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24">
+              <ProjectNewsList projectId={project.id.toString()} projectName={project.name} />
             </div>
           </div>
         </div>

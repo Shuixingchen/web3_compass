@@ -31,6 +31,7 @@ export interface Web3Project {
   chains: string[]; // 项目所属的区块链数组
   viewCount: number; // 项目浏览次数
   news?: ProjectNews[]; // 项目相关新闻
+  isBookmarked?: boolean; // 当前用户是否收藏了该项目
   officialLinks?: {
     website?: string;
     whitepaper?: string;

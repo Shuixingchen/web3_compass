@@ -2,8 +2,9 @@
 
 import { ExternalLink, Eye, Heart, Link } from 'lucide-react';
 import { Web3Project } from '@/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import clsx from 'clsx';
 
 interface ProjectCardProps {
@@ -11,8 +12,15 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project }: ProjectCardProps) {
-  const [isFavorited, setIsFavorited] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(project.isBookmarked || false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
+
+  // 当项目数据更新时，同步收藏状态
+  useEffect(() => {
+    setIsFavorited(project.isBookmarked || false);
+  }, [project.isBookmarked]);
 
   const handleCardClick = () => {
     router.push(`/project/${project.id}`);
@@ -23,9 +31,52 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     window.open(project.url, '_blank', 'noopener,noreferrer');
   };
 
-  const handleFavorite = (e: React.MouseEvent) => {
+  const handleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsFavorited(!isFavorited);
+    
+    if (!session?.user?.id) {
+      // 未登录，跳转到登录页面
+      router.push('/api/auth/signin');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      if (isFavorited) {
+        // 取消收藏
+        const response = await fetch(`/api/bookmarks?projectId=${project.id}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          setIsFavorited(false);
+        } else {
+          const error = await response.json();
+          console.error('取消收藏失败:', error.error);
+        }
+      } else {
+        // 添加收藏
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ projectId: project.id }),
+        });
+        
+        if (response.ok) {
+          setIsFavorited(true);
+        } else {
+          const error = await response.json();
+          console.error('添加收藏失败:', error.error);
+        }
+      }
+    } catch (error) {
+      console.error('收藏操作失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,13 +87,23 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       {/* 收藏按钮 - 右上角 */}
       <button
         onClick={handleFavorite}
+        disabled={isLoading}
         className={clsx(
           'absolute top-4 right-4 p-2 rounded-lg transition-all duration-200',
+          isLoading && 'opacity-50 cursor-not-allowed',
           isFavorited 
             ? 'text-red-500 bg-red-50 hover:bg-red-100' 
             : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
         )}
-        title={isFavorited ? '取消收藏' : '收藏项目'}
+        title={
+          isLoading 
+            ? '处理中...' 
+            : isFavorited 
+              ? '取消收藏' 
+              : session?.user?.id 
+                ? '收藏项目' 
+                : '登录后收藏'
+        }
       >
         <Heart className={clsx('w-5 h-5', isFavorited && 'fill-current')} />
       </button>

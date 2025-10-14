@@ -1,27 +1,98 @@
 'use client';
 
-import { useState } from 'react';
-import { ExternalLink, Clock, ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { ExternalLink, Clock, Loader2 } from 'lucide-react';
 import { ProjectNews } from '@/types';
 
 interface ProjectNewsListProps {
-  news: ProjectNews[];
+  projectId: string;
   projectName: string;
 }
 
-export default function ProjectNewsList({ news, projectName }: ProjectNewsListProps) {
-  const [visibleCount, setVisibleCount] = useState(5);
-  const [isExpanded, setIsExpanded] = useState(false);
+interface NewsResponse {
+  news: ProjectNews[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
-  const handleLoadMore = () => {
-    if (visibleCount >= news.length) {
-      setVisibleCount(5);
-      setIsExpanded(false);
-    } else {
-      setVisibleCount(Math.min(visibleCount + 5, news.length));
-      setIsExpanded(visibleCount + 5 >= news.length);
+export default function ProjectNewsList({ projectId, projectName }: ProjectNewsListProps) {
+  const [news, setNews] = useState<ProjectNews[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const itemsPerPage = 10; // 每页显示10条新闻
+
+  // 获取新闻数据的函数
+  const fetchNews = useCallback(async (page: number, append: boolean = false) => {
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+      
+      const response = await fetch(`/api/projects/${projectId}/news?page=${page}&limit=${itemsPerPage}`);
+      
+      if (!response.ok) {
+        throw new Error('获取新闻数据失败');
+      }
+      
+      const data: NewsResponse = await response.json();
+      
+      if (append) {
+        // 追加新数据
+        setNews(prevNews => [...prevNews, ...data.news]);
+      } else {
+        // 替换数据（首次加载）
+        setNews(data.news);
+      }
+      
+      setCurrentPage(data.page);
+      setHasMore(data.page < data.totalPages);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '获取新闻数据失败');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, [projectId, itemsPerPage]);
+
+  // 滚动到底部检测
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 50;
+    
+    console.log('Scroll event:', {
+      scrollTop: Math.round(scrollTop),
+      scrollHeight,
+      clientHeight,
+      isNearBottom,
+      loadingMore,
+      hasMore,
+      currentPage
+    });
+    
+    if (isNearBottom && !loadingMore && hasMore) {
+      console.log('🚀 Loading next page:', currentPage + 1);
+      fetchNews(currentPage + 1, true);
+    }
+  }, [loadingMore, hasMore, currentPage, fetchNews]);
+
+  // 组件挂载时获取第一页数据
+  useEffect(() => {
+    fetchNews(1);
+  }, [projectId]);
+
+  // 移除了useEffect中的事件监听器，改为直接在JSX中使用onScroll
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -46,37 +117,82 @@ export default function ProjectNewsList({ news, projectName }: ProjectNewsListPr
 
   if (!news || news.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-          <Clock className="h-5 w-5 mr-2 text-blue-600" />
+      <div className="bg-white rounded-2xl shadow-lg p-6 h-fit">
+        <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+          <Clock className="h-4 w-4 mr-2 text-blue-600" />
           最新动态
         </h2>
         <div className="text-center py-8">
           <div className="text-gray-400 mb-2">📰</div>
-          <p className="text-gray-500">暂无相关新闻</p>
+          <p className="text-gray-500 text-sm">暂无相关新闻</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 加载状态
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-6 h-fit">
+        <h2 className="text-lg font-bold text-gray-900 flex items-center mb-4">
+          <Clock className="h-4 w-4 mr-2 text-blue-600" />
+          最新动态
+        </h2>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600 mr-2" />
+          <span className="text-gray-500">加载中...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-6 h-fit">
+        <h2 className="text-lg font-bold text-gray-900 flex items-center mb-4">
+          <Clock className="h-4 w-4 mr-2 text-blue-600" />
+          最新动态
+        </h2>
+        <div className="text-center py-8">
+          <div className="text-red-400 mb-2">⚠️</div>
+          <p className="text-red-500 text-sm">{error}</p>
+          <button 
+            onClick={() => fetchNews(1)}
+            className="mt-2 text-blue-600 hover:text-blue-700 text-sm"
+          >
+            重新加载
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-        <Clock className="h-5 w-5 mr-2 text-blue-600" />
-        最新动态
-      </h2>
+    <div className="bg-white rounded-2xl shadow-lg p-6 h-fit">
+      <div className="flex items-center mb-4">
+        <h2 className="text-lg font-bold text-gray-900 flex items-center">
+          <Clock className="h-4 w-4 mr-2 text-blue-600" />
+          最新动态
+        </h2>
+      </div>
       
-      <div className="space-y-4">
-        {news.slice(0, visibleCount).map((item) => (
+      {/* 新闻列表容器 */}
+      <div 
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+      >
+        {news.map((item: ProjectNews) => (
           <div
             key={item.id}
-            className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0"
+            className="border border-gray-100 rounded-lg p-3 hover:shadow-md transition-shadow"
           >
             <a
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block group hover:bg-gray-50 rounded-lg p-3 -m-3 transition-colors"
+              className="block group"
             >
               <div className="flex items-start justify-between mb-2">
                 <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 flex-1 mr-2">
@@ -85,46 +201,28 @@ export default function ProjectNewsList({ news, projectName }: ProjectNewsListPr
                 <ExternalLink className="h-3 w-3 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 mt-0.5" />
               </div>
               
-              <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+              <p className="text-xs text-gray-600 line-clamp-3">
                 {item.summary}
               </p>
-              
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {formatDate(item.publishedAt)}
-                </span>
-                {item.source && (
-                  <span className="bg-gray-100 px-2 py-0.5 rounded-full">
-                    {item.source}
-                  </span>
-                )}
-              </div>
             </a>
           </div>
         ))}
+        
+        {/* 加载更多指示器 */}
+        {loadingMore && (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600 mr-2" />
+            <span className="text-sm text-gray-500">加载更多...</span>
+          </div>
+        )}
+        
+        {/* 没有更多数据提示 */}
+        {!hasMore && news.length > 0 && (
+          <div className="text-center py-4">
+            <p className="text-xs text-gray-400">已显示全部新闻</p>
+          </div>
+        )}
       </div>
-
-      {news.length > 5 && (
-        <div className="mt-6 text-center">
-          <button
-            onClick={handleLoadMore}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            {isExpanded ? (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1 rotate-180 transition-transform" />
-                收起
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1 transition-transform" />
-                查看更多 ({news.length - visibleCount} 条)
-              </>
-            )}
-          </button>
-        </div>
-      )}
     </div>
   );
 }
