@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { categories } from '@/data/projects';
+import { useState, useEffect } from 'react';
+import { Category } from '@/types';
 
 interface ProjectSubmissionData {
   name: string;
@@ -24,13 +24,68 @@ interface ProjectSubmissionData {
   };
 }
 
-const availableChains = [
-  'Ethereum', 'Bitcoin', 'BSC', 'Polygon', 'Avalanche', 'Arbitrum', 
-  'Optimism', 'Base', 'Fantom', 'Solana', 'Cardano', 'Polkadot', 
-  'Cosmos', 'Near', 'Klaytn', 'Ronin'
-];
+interface ChainData {
+  symbol: string;
+  name: string;
+  sort: number;
+}
 
 export default function ProjectSubmissionForm() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [availableChains, setAvailableChains] = useState<ChainData[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingChains, setIsLoadingChains] = useState(true);
+  
+  // 获取分类数据
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        
+        if (data.success) {
+          setCategories(data.categories);
+        } else {
+          console.error('获取分类失败:', data.message);
+          setSubmitMessage('获取分类数据失败，请刷新页面重试');
+        }
+      } catch (error) {
+        console.error('获取分类失败:', error);
+        setSubmitMessage('获取分类数据失败，请刷新页面重试');
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // 获取区块链数据
+  useEffect(() => {
+    const fetchChains = async () => {
+      try {
+        setIsLoadingChains(true);
+        const response = await fetch('/api/chains');
+        const data = await response.json();
+        
+        if (data.success) {
+          setAvailableChains(data.chains);
+        } else {
+          console.error('获取区块链数据失败:', data.message);
+          setSubmitMessage('获取区块链数据失败，请刷新页面重试');
+        }
+      } catch (error) {
+        console.error('获取区块链数据失败:', error);
+        setSubmitMessage('获取区块链数据失败，请刷新页面重试');
+      } finally {
+        setIsLoadingChains(false);
+      }
+    };
+
+    fetchChains();
+  }, []);
+  
   const [formData, setFormData] = useState<ProjectSubmissionData>({
     name: '',
     description: '',
@@ -265,7 +320,7 @@ export default function ProjectSubmissionForm() {
       });
 
       if (response.ok) {
-        setSubmitMessage('项目提交成功！我们会在审核后将其添加到平台中。');
+        setSubmitMessage('项目提交成功！您的项目已添加到平台中。');
         // 重置表单
         setFormData({
           name: '',
@@ -410,8 +465,9 @@ export default function ProjectSubmissionForm() {
                 handleInputChange('subcategory', ''); // 重置子分类
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoadingCategories}
             >
-              <option value="">选择分类</option>
+              <option value="">{isLoadingCategories ? '加载中...' : '选择分类'}</option>
               {categories.map(category => (
                 <option key={category.id} value={category.id}>
                   {category.icon} {category.name}
@@ -459,19 +515,25 @@ export default function ProjectSubmissionForm() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             支持的区块链 * <span className="text-xs text-gray-500">(至少选择一个)</span>
           </label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {availableChains.map(chain => (
-              <label key={chain} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.chains.includes(chain)}
-                  onChange={() => toggleChain(chain)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">{chain}</span>
-              </label>
-            ))}
-          </div>
+          {isLoadingChains ? (
+            <div className="text-sm text-gray-500">加载区块链数据中...</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {availableChains.map(chain => (
+                <label key={chain.symbol} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.chains.includes(chain.name)}
+                    onChange={() => toggleChain(chain.name)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">
+                    {chain.name}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
           {formData.chains.length === 0 && (
             <p className="text-sm text-red-600 mt-2">请至少选择一个支持的区块链</p>
           )}

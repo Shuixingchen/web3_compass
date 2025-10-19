@@ -17,12 +17,14 @@ CREATE TABLE `web3_users` (
   `avatar_url` varchar(500) DEFAULT NULL COMMENT '头像URL',
   `provider` enum('google', 'github') NOT NULL COMMENT '登录提供商',
   `provider_id` varchar(100) NOT NULL COMMENT '第三方平台用户ID',
+  `is_admin` int(1) NOT NULL DEFAULT 0 COMMENT '是否为管理员：0-普通用户，1-管理员',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_users_email` (`email`),
   UNIQUE KEY `uk_users_provider` (`provider`, `provider_id`),
-  KEY `idx_users_created_at` (`created_at`)
+  KEY `idx_users_created_at` (`created_at`),
+  KEY `idx_users_is_admin` (`is_admin`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- ================================
@@ -74,24 +76,7 @@ CREATE TABLE `web3_projects` (
   CONSTRAINT `fk_projects_subcategory` FOREIGN KEY (`subcategory`) REFERENCES `web3_categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='项目表';
 
--- ================================
--- 4. 标签表 (tags) - 供用户选择的标签库
--- ================================
-DROP TABLE IF EXISTS `web3_tags`;
-CREATE TABLE `web3_tags` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '标签ID',
-  `name` varchar(50) NOT NULL COMMENT '标签名称',
-  `category` varchar(50) DEFAULT NULL COMMENT '标签分类',
-  `description` varchar(200) DEFAULT NULL COMMENT '标签描述',
-  `color` varchar(7) DEFAULT '#3B82F6' COMMENT '标签颜色',
-  `usage_count` int(11) NOT NULL DEFAULT 0 COMMENT '使用次数',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_tags_name` (`name`),
-  KEY `idx_tags_category` (`category`),
-  KEY `idx_tags_usage_count` (`usage_count`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
+
 
 -- ================================
 -- 5. 新闻表 (news) - 简化版
@@ -130,6 +115,13 @@ CREATE TABLE `web3_user_bookmarks` (
   KEY `idx_user_bookmarks_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户收藏表';
 
+
+CREATE TABLE `web3_chains` (
+  `chain_symbol` varchar(31) NOT NULL,
+  `chain_name` varchar(63) DEFAULT NULL,
+  `sort` int(11) DEFAULT NULL,
+  PRIMARY KEY (`chain_symbol`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- ================================
 -- 初始化数据
 -- ================================

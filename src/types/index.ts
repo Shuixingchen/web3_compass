@@ -7,16 +7,7 @@ export interface ProjectNews {
   source?: string;
 }
 
-export interface Tag {
-  id: string;
-  name: string;
-  category?: string;
-  description?: string;
-  color?: string;
-  usageCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
+
 
 export interface Web3Project {
   id: string;

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import SearchBar from '@/components/SearchBar';
 import FilterDropdown from '@/components/FilterDropdown';
@@ -112,11 +114,23 @@ export default function HomeClient({ projects, categories }: HomeClientProps) {
             {/* 搜索框区域 */}
             <div className="flex justify-center mb-6">
               <div className="w-full max-w-3xl">
-                <SearchBar
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  placeholder="搜索Web3项目、DeFi、NFT、DAO..."
-                />
+                <div className="flex gap-4 items-center">
+                  <div className="flex-1">
+                    <SearchBar
+                      searchTerm={searchTerm}
+                      onSearchChange={setSearchTerm}
+                      placeholder="搜索Web3项目、DeFi、NFT、DAO..."
+                    />
+                  </div>
+                  <Link
+                    href="/add-project"
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="hidden sm:inline">提交新项目</span>
+                    <span className="sm:hidden">提交</span>
+                  </Link>
+                </div>
               </div>
             </div>
             

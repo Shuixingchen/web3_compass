@@ -16,7 +16,7 @@ export default function AddProjectPage() {
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             欢迎向 Web3 Compass 提交您的项目！我们致力于为用户提供最全面的 Web3 项目信息。
-            请填写以下表单，我们会在审核后将您的项目添加到平台中。
+            请填写以下表单，您的项目将直接添加到平台中。
           </p>
         </div>
         
@@ -29,7 +29,7 @@ export default function AddProjectPage() {
             <li>• 选择正确的项目分类和支持的区块链网络</li>
             <li>• 提供清晰的项目标签，帮助用户更好地发现您的项目</li>
             <li>• 官方链接将帮助用户了解更多项目详情</li>
-            <li>• 我们会在 1-3 个工作日内审核您的提交</li>
+            <li>• 只有管理员用户才能提交项目，如需权限请联系管理员</li>
           </ul>
         </div>
 

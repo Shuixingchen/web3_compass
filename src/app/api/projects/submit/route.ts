@@ -1,5 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../auth/[...nextauth]/route';
 import { executeQuery, executeQuerySingle } from '@/lib/database';
+
+// 检查用户是否有管理员权限
+async function checkUserAdminPermission(userId: string): Promise<boolean> {
+  try {
+    const result = await executeQuerySingle(
+      'SELECT is_admin FROM web3_users WHERE id = ?',
+      [userId]
+    );
+    return result ? result.is_admin === 1 : false;
+  } catch (error) {
+    console.error('Error checking user admin permission:', error);
+    return false;
+  }
+}
+
+// 数据库查询函数 - 根据slug获取分类ID
+async function getCategoryIdBySlug(categorySlug: string): Promise<number | null> {
+  try {
+    const result = await executeQuerySingle(
+      'SELECT id FROM web3_categories WHERE slug = ? AND parent_id IS NULL',
+      [categorySlug]
+    );
+    return result ? result.id : null;
+  } catch (error) {
+    console.error('Error fetching category ID:', error);
+    return null;
+  }
+}
+
+// 数据库查询函数 - 根据slug获取子分类ID
+async function getSubcategoryIdBySlug(subcategorySlug: string): Promise<number | null> {
+  try {
+    const result = await executeQuerySingle(
+      'SELECT id FROM web3_categories WHERE slug = ? AND parent_id IS NOT NULL',
+      [subcategorySlug]
+    );
+    return result ? result.id : null;
+  } catch (error) {
+    console.error('Error fetching subcategory ID:', error);
+    return null;
+  }
+}
 
 interface ProjectSubmissionData {
   name: string;
@@ -22,16 +66,6 @@ interface ProjectSubmissionData {
   };
 }
 
-interface SubmittedProject extends ProjectSubmissionData {
-  id: string;
-  submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submitterInfo?: {
-    ip: string;
-    userAgent: string;
-  };
-}
-
 // 验证URL格式
 function isValidUrl(url: string): boolean {
   try {
@@ -41,6 +75,10 @@ function isValidUrl(url: string): boolean {
     return false;
   }
 }
+
+
+
+
 
 // 验证提交数据
 function validateSubmission(data: ProjectSubmissionData): string | null {
@@ -105,112 +143,29 @@ function validateSubmission(data: ProjectSubmissionData): string | null {
   return null;
 }
 
-// 生成唯一ID
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
 
-// 读取现有提交
-async function getExistingSubmissions(): Promise<SubmittedProject[]> {
-  try {
-    const query = `
-      SELECT 
-        submission_id as id,
-        name,
-        description,
-        detailed_description as detailedDescription,
-        category,
-        subcategory,
-        url,
-        logo,
-        tags,
-        chains,
-        official_links as officialLinks,
-        status,
-        submitter_ip as ip,
-        submitter_user_agent as userAgent,
-        created_at as submittedAt
-      FROM web3_project_submissions 
-      ORDER BY created_at DESC
-    `;
-    
-    const rows = await executeQuery<any>(query);
-    
-    return rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      detailedDescription: row.detailedDescription,
-      category: row.category,
-      subcategory: row.subcategory,
-      url: row.url,
-      logo: row.logo,
-      tags: JSON.parse(row.tags || '[]'),
-      chains: JSON.parse(row.chains || '[]'),
-      officialLinks: JSON.parse(row.officialLinks || '{}'),
-      status: row.status,
-      submittedAt: row.submittedAt,
-      submitterInfo: {
-        ip: row.ip || 'unknown',
-        userAgent: row.userAgent || 'unknown'
-      }
-    }));
-  } catch (error) {
-    console.error('获取提交记录失败:', error);
-    return [];
-  }
-}
-
-// 保存提交
-async function saveSubmission(submission: SubmittedProject): Promise<void> {
-  try {
-    // 检查是否已存在相同名称的项目
-    const existingQuery = `
-      SELECT COUNT(*) as count 
-      FROM web3_project_submissions 
-      WHERE LOWER(name) = LOWER(?) AND status != 'rejected'
-    `;
-    
-    const existingResult = await executeQuerySingle<{count: number}>(existingQuery, [submission.name]);
-    
-    if (existingResult && existingResult.count > 0) {
-      throw new Error('已存在同名项目，请检查项目名称');
-    }
-
-    // 插入新的提交记录
-    const insertQuery = `
-      INSERT INTO web3_project_submissions (
-        submission_id, name, description, detailed_description, category, subcategory,
-        url, logo, tags, chains, official_links, status, submitter_ip, submitter_user_agent
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    
-    const params = [
-      submission.id,
-      submission.name,
-      submission.description,
-      submission.detailedDescription,
-      submission.category,
-      submission.subcategory,
-      submission.url,
-      submission.logo,
-      JSON.stringify(submission.tags),
-      JSON.stringify(submission.chains),
-      JSON.stringify(submission.officialLinks),
-      submission.status,
-      submission.submitterInfo?.ip || 'unknown',
-      submission.submitterInfo?.userAgent || 'unknown'
-    ];
-    
-    await executeQuery(insertQuery, params);
-  } catch (error) {
-    console.error('保存提交记录失败:', error);
-    throw error;
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
+    // 获取用户会话
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: true, message: '请先登录' },
+        { status: 401 }
+      );
+    }
+
+    // 检查用户是否有管理员权限
+    const hasAdminPermission = await checkUserAdminPermission(String(session.user.id));
+    if (!hasAdminPermission) {
+      return NextResponse.json(
+        { error: true, message: '您没有提交项目的权限，请联系管理员' },
+        { status: 403 }
+      );
+    }
+
     const data: ProjectSubmissionData = await request.json();
     
     // 验证提交数据
@@ -222,26 +177,64 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 创建提交记录
-    const submission: SubmittedProject = {
-      ...data,
-      id: generateId(),
-      submittedAt: new Date().toISOString(),
-      status: 'pending',
-      submitterInfo: {
-        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-        userAgent: request.headers.get('user-agent') || 'unknown'
-      }
-    };
+    // 获取分类和子分类ID
+    const categoryId = await getCategoryIdBySlug(data.category);
+    const subcategoryId = await getSubcategoryIdBySlug(data.subcategory);
+    
+    if (!categoryId || !subcategoryId) {
+      return NextResponse.json(
+        { error: true, message: '无效的分类或子分类' },
+        { status: 400 }
+      );
+    }
 
-    // 保存提交
-    await saveSubmission(submission);
+    // 检查项目是否已存在
+    const existingProject = await executeQuerySingle<{count: number}>(
+      'SELECT COUNT(*) as count FROM web3_projects WHERE LOWER(name) = LOWER(?)',
+      [data.name]
+    );
+    
+    if (existingProject && existingProject.count > 0) {
+      return NextResponse.json(
+        { error: true, message: '项目已存在' },
+        { status: 400 }
+      );
+    }
 
-    // 返回成功响应
+    // 插入项目到数据库
+     const insertQuery = `
+       INSERT INTO web3_projects (
+         name, description, detailed_description, category, subcategory,
+         url, logo, tags, chains, official_links
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     `;
+    // 修改project_count
+    const updateQuery = `
+      UPDATE web3_categories
+      SET project_count = project_count + 1
+      WHERE id = ?
+    `;
+    await executeQuery(updateQuery, [categoryId]);
+    await executeQuery(updateQuery, [subcategoryId]); 
+    
+    const params = [
+       data.name,
+       data.description,
+       data.detailedDescription,
+       categoryId,
+       subcategoryId,
+       data.url,
+       data.logo,
+       JSON.stringify(data.tags),
+       JSON.stringify(data.chains),
+       JSON.stringify(data.officialLinks)
+     ];
+    
+    await executeQuery(insertQuery, params);
+
     return NextResponse.json({
       success: true,
-      message: '项目提交成功！我们会在1-3个工作日内审核您的提交。',
-      submissionId: submission.id
+      message: '项目添加成功！'
     });
 
   } catch (error) {
@@ -261,34 +254,87 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 获取提交列表（管理员功能）
+// 获取项目列表
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
+    const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
+    const search = searchParams.get('search');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
     
-    const submissions = await getExistingSubmissions();
+    let whereConditions: string[] = [];
+     let params: any[] = [];
     
-    // 根据状态过滤
-    const filteredSubmissions = status 
-      ? submissions.filter(s => s.status === status)
-      : submissions;
+    if (category) {
+       const categoryId = await getCategoryIdBySlug(category);
+       if (categoryId) {
+         whereConditions.push('category = ?');
+         params.push(categoryId);
+       }
+     }
+     
+     if (subcategory) {
+       const subcategoryId = await getSubcategoryIdBySlug(subcategory);
+       if (subcategoryId) {
+         whereConditions.push('subcategory = ?');
+         params.push(subcategoryId);
+       }
+     }
     
-    // 按提交时间倒序排列
-    filteredSubmissions.sort((a, b) => 
-      new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-    );
+    if (search) {
+      whereConditions.push('(name LIKE ? OR description LIKE ? OR tags LIKE ?)');
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+    
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    
+    // 获取总数
+    const countQuery = `SELECT COUNT(*) as total FROM web3_projects ${whereClause}`;
+    const countResult = await executeQuerySingle<{total: number}>(countQuery, params);
+    const total = countResult?.total || 0;
+    
+    // 获取项目列表
+     const projectsQuery = `
+       SELECT 
+         id, name, description, detailed_description as detailedDescription,
+         category, subcategory,
+         url, logo, tags, chains, official_links as officialLinks,
+         created_at as createdAt, updated_at as updatedAt
+       FROM web3_projects 
+       ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT ? OFFSET ?
+     `;
+    
+    const projects = await executeQuery<any>(projectsQuery, [...params, limit, offset]);
+    
+    // 处理JSON字段
+    const processedProjects = projects.map(project => ({
+      ...project,
+      tags: JSON.parse(project.tags || '[]'),
+      chains: JSON.parse(project.chains || '[]'),
+      officialLinks: JSON.parse(project.officialLinks || '{}')
+    }));
     
     return NextResponse.json({
       success: true,
-      submissions: filteredSubmissions,
-      total: filteredSubmissions.length
+      projects: processedProjects,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     });
     
   } catch (error) {
-    console.error('获取提交列表错误:', error);
+    console.error('获取项目列表错误:', error);
     return NextResponse.json(
-      { error: true, message: '获取提交列表失败' },
+      { error: true, message: '获取项目列表失败' },
       { status: 500 }
     );
   }

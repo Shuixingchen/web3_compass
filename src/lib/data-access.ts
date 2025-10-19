@@ -1,5 +1,5 @@
 import { executeQuery, executeQuerySingle } from './database';
-import { Web3Project, Category, ProjectNews, Subcategory, Tag } from '@/types';
+import { Web3Project, Category, ProjectNews, Subcategory } from '@/types';
 
 // 数据库字段到接口的映射
 interface DbProject {
@@ -42,16 +42,7 @@ interface DbCategory {
 }
 
 
-interface DbTag {
-  id: string;
-  name: string;
-  category?: string;
-  description?: string;
-  color?: string;
-  usage_count: number;
-  created_at: string;
-  updated_at: string;
-}
+
 
 interface DbBookmark {
   id: string;
@@ -474,28 +465,7 @@ export async function getProjectNews(
   }
 }
 
-// 获取所有标签
-export async function getTags(): Promise<Tag[]> {
-  try {
-    const tags = await executeQuery<DbTag>(
-      'SELECT * FROM web3_tags ORDER BY usage_count DESC, name ASC'
-    );
 
-    return tags.map(tag => ({
-      id: tag.id,
-      name: tag.name,
-      category: tag.category,
-      description: tag.description,
-      color: tag.color,
-      usageCount: tag.usage_count,
-      createdAt: tag.created_at,
-      updatedAt: tag.updated_at
-    }));
-  } catch (error) {
-    console.error('获取标签失败:', error);
-    throw error;
-  }
-}
 
 // 获取用户收藏的项目
 export async function getUserBookmarks(userId: string): Promise<Web3Project[]> {
