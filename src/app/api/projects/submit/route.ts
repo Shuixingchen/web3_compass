@@ -82,11 +82,20 @@ function isValidUrl(url: string): boolean {
 
 // 验证提交数据
 function validateSubmission(data: ProjectSubmissionData): string | null {
-  // 必填字段检查
-  const requiredFields = ['name', 'description', 'category', 'subcategory', 'url'];
-  for (const field of requiredFields) {
-    if (!data[field as keyof ProjectSubmissionData] || 
-        (data[field as keyof ProjectSubmissionData] as string).trim() === '') {
+  // 字符串字段检查
+  const requiredStringFields = ['name', 'description', 'url'];
+  for (const field of requiredStringFields) {
+    const value = data[field as keyof ProjectSubmissionData] as string;
+    if (!value || value.trim() === '') {
+      return `${field} 是必填字段`;
+    }
+  }
+
+  // 数字字段检查
+  const requiredNumberFields = ['category', 'subcategory'];
+  for (const field of requiredNumberFields) {
+    const value = data[field as keyof ProjectSubmissionData] as number;
+    if (!value || value === 0) {
       return `${field} 是必填字段`;
     }
   }
@@ -166,6 +175,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 获取项目ID（如果有的话，表示是编辑操作）
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('id');
+    const isEditMode = !!projectId;
+
     const data: ProjectSubmissionData = await request.json();
     
     // 验证提交数据
@@ -188,54 +202,141 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查项目是否已存在
-    const existingProject = await executeQuerySingle<{count: number}>(
-      'SELECT COUNT(*) as count FROM web3_projects WHERE LOWER(name) = LOWER(?)',
-      [data.name]
-    );
-    
-    if (existingProject && existingProject.count > 0) {
-      return NextResponse.json(
-        { error: true, message: '项目已存在' },
-        { status: 400 }
+    if (isEditMode) {
+      // 编辑模式
+      // 检查项目是否存在
+      const existingProject = await executeQuerySingle<{id: string, name: string, category: number, subcategory: number}>(
+        'SELECT id, name, category, subcategory FROM web3_projects WHERE id = ?',
+        [projectId]
       );
+      
+      if (!existingProject) {
+        return NextResponse.json(
+          { error: true, message: '项目不存在' },
+          { status: 404 }
+        );
+      }
+
+      // 检查是否有其他项目使用相同名称（排除当前项目）
+      const duplicateProject = await executeQuerySingle<{count: number}>(
+        'SELECT COUNT(*) as count FROM web3_projects WHERE LOWER(name) = LOWER(?) AND id != ?',
+        [data.name, projectId]
+      );
+      
+      if (duplicateProject && duplicateProject.count > 0) {
+        return NextResponse.json(
+          { error: true, message: '项目名称已被其他项目使用' },
+          { status: 400 }
+        );
+      }
+
+      // 更新项目分类计数（如果分类发生变化）
+      if (existingProject.category !== categoryId) {
+        // 减少旧分类的计数
+        await executeQuery(
+          'UPDATE web3_categories SET project_count = project_count - 1 WHERE id = ?',
+          [existingProject.category]
+        );
+        // 增加新分类的计数
+        await executeQuery(
+          'UPDATE web3_categories SET project_count = project_count + 1 WHERE id = ?',
+          [categoryId]
+        );
+      }
+
+      if (existingProject.subcategory !== subcategoryId) {
+        // 减少旧子分类的计数
+        await executeQuery(
+          'UPDATE web3_categories SET project_count = project_count - 1 WHERE id = ?',
+          [existingProject.subcategory]
+        );
+        // 增加新子分类的计数
+        await executeQuery(
+          'UPDATE web3_categories SET project_count = project_count + 1 WHERE id = ?',
+          [subcategoryId]
+        );
+      }
+
+      // 更新项目信息
+      const updateQuery = `
+        UPDATE web3_projects SET
+          name = ?, description = ?, detailed_description = ?, category = ?, subcategory = ?,
+          url = ?, logo = ?, tags = ?, chains = ?, official_links = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `;
+      
+      const params = [
+        data.name,
+        data.description,
+        data.detailedDescription,
+        categoryId,
+        subcategoryId,
+        data.url,
+        data.logo,
+        JSON.stringify(data.tags),
+        JSON.stringify(data.chains),
+        JSON.stringify(data.officialLinks),
+        projectId
+      ];
+      
+      await executeQuery(updateQuery, params);
+
+      return NextResponse.json({
+        success: true,
+        message: '项目更新成功！'
+      });
+
+    } else {
+      // 新增模式
+      // 检查项目是否已存在
+      const existingProject = await executeQuerySingle<{count: number}>(
+        'SELECT COUNT(*) as count FROM web3_projects WHERE LOWER(name) = LOWER(?)',
+        [data.name]
+      );
+      
+      if (existingProject && existingProject.count > 0) {
+        return NextResponse.json(
+          { error: true, message: '项目已存在' },
+          { status: 400 }
+        );
+      }
+
+      // 插入项目到数据库
+       const insertQuery = `
+         INSERT INTO web3_projects (
+           name, description, detailed_description, category, subcategory,
+           url, logo, tags, chains, official_links
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       `;
+      // 修改project_count
+      const updateQuery = `
+        UPDATE web3_categories
+        SET project_count = project_count + 1
+        WHERE id = ?
+      `;
+      await executeQuery(updateQuery, [categoryId]);
+      await executeQuery(updateQuery, [subcategoryId]); 
+      
+      const params = [
+         data.name,
+         data.description,
+         data.detailedDescription,
+         categoryId,
+         subcategoryId,
+         data.url,
+         data.logo,
+         JSON.stringify(data.tags),
+         JSON.stringify(data.chains),
+         JSON.stringify(data.officialLinks)
+       ];
+      
+      await executeQuery(insertQuery, params);
+
+      return NextResponse.json({
+        success: true,
+        message: '项目添加成功！'
+      });
     }
-
-    // 插入项目到数据库
-     const insertQuery = `
-       INSERT INTO web3_projects (
-         name, description, detailed_description, category, subcategory,
-         url, logo, tags, chains, official_links
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     `;
-    // 修改project_count
-    const updateQuery = `
-      UPDATE web3_categories
-      SET project_count = project_count + 1
-      WHERE id = ?
-    `;
-    await executeQuery(updateQuery, [categoryId]);
-    await executeQuery(updateQuery, [subcategoryId]); 
-    
-    const params = [
-       data.name,
-       data.description,
-       data.detailedDescription,
-       categoryId,
-       subcategoryId,
-       data.url,
-       data.logo,
-       JSON.stringify(data.tags),
-       JSON.stringify(data.chains),
-       JSON.stringify(data.officialLinks)
-     ];
-    
-    await executeQuery(insertQuery, params);
-
-    return NextResponse.json({
-      success: true,
-      message: '项目添加成功！'
-    });
 
   } catch (error) {
     console.error('项目提交错误:', error);
@@ -253,6 +354,8 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+
 
 // 获取项目列表
 export async function GET(request: NextRequest) {

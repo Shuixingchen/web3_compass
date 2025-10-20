@@ -216,7 +216,7 @@ export async function getProjectById(id: string): Promise<Web3Project | null> {
       'SELECT * FROM web3_projects WHERE id = ?',
       [id]
     );
-
+    console.log('获取项目基本信息:', project);
     if (!project) {
       return null;
     }
@@ -230,23 +230,37 @@ export async function getProjectById(id: string): Promise<Web3Project | null> {
     // 解析项目标签JSON
     let tags: string[] = [];
     try {
-      tags = project.tags ? JSON.parse(project.tags) : [];
-    } catch {
+      if (Array.isArray(project.tags)) {
+        tags = project.tags;
+      } else if (typeof project.tags === 'string') {
+        tags = JSON.parse(project.tags);
+      }
+    } catch (error) {
+      console.error('解析项目标签JSON失败:', error);
       tags = [];
     }
 
     // 解析项目链JSON
     let chains: string[] = [];
     try {
-      chains = project.chains ? JSON.parse(project.chains) : [];
-    } catch {
+      if (Array.isArray(project.chains)) {
+        chains = project.chains;
+      } else if (typeof project.chains === 'string') {
+        chains = JSON.parse(project.chains);
+      }
+    } catch (error) {
+      console.error('解析项目链JSON失败:', error);
       chains = [];
     }
 
     // 解析官方链接JSON
     let officialLinks;
     try {
-      officialLinks = project.official_links ? JSON.parse(project.official_links) : undefined;
+      if (typeof project.official_links === 'string') {
+        officialLinks = JSON.parse(project.official_links);
+      } else if (typeof project.official_links === 'object') {
+        officialLinks = project.official_links;
+      }
     } catch {
       officialLinks = undefined;
     }

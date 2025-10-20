@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Category } from '@/types';
+import { Category, Web3Project } from '@/types';
 
 interface ProjectSubmissionData {
   name: string;
@@ -30,7 +30,17 @@ interface ChainData {
   sort: number;
 }
 
-export default function ProjectSubmissionForm() {
+interface ProjectSubmissionFormProps {
+  initialData?: Web3Project;
+  isEditMode?: boolean;
+  projectId?: string;
+}
+
+export default function ProjectSubmissionForm({ 
+  initialData, 
+  isEditMode = false, 
+  projectId 
+}: ProjectSubmissionFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [availableChains, setAvailableChains] = useState<ChainData[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -106,6 +116,32 @@ export default function ProjectSubmissionForm() {
       medium: ''
     }
   });
+
+  // 初始化编辑数据
+  useEffect(() => {
+    if (isEditMode && initialData) {
+      setFormData({
+        name: initialData.name || '',
+        description: initialData.description || '',
+        detailedDescription: initialData.detailedDescription || '',
+        category: initialData.category || 0,
+        subcategory: initialData.subcategory || 0,
+        url: initialData.url || '',
+        logo: initialData.logo || '',
+        tags: initialData.tags || [],
+        chains: initialData.chains || [],
+        officialLinks: {
+          website: initialData.officialLinks?.website || '',
+          whitepaper: initialData.officialLinks?.whitepaper || '',
+          twitter: initialData.officialLinks?.twitter || '',
+          telegram: initialData.officialLinks?.telegram || '',
+          discord: initialData.officialLinks?.discord || '',
+          github: initialData.officialLinks?.github || '',
+          medium: initialData.officialLinks?.medium || ''
+        }
+      });
+    }
+  }, [isEditMode, initialData]);
 
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -316,7 +352,11 @@ export default function ProjectSubmissionForm() {
     setSubmitMessage('');
 
     try {
-      const response = await fetch('/api/projects/submit', {
+      const url = isEditMode && projectId 
+        ? `/api/projects/submit?id=${projectId}` 
+        : '/api/projects/submit';
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -325,34 +365,40 @@ export default function ProjectSubmissionForm() {
       });
 
       if (response.ok) {
-        setSubmitMessage('项目提交成功！您的项目已添加到平台中。');
-        // 重置表单
-        setFormData({
-          name: '',
-          description: '',
-          detailedDescription: '',
-          category: 0,
-          subcategory: 0,
-          url: '',
-          logo: '',
-          tags: [],
-          chains: [],
-          officialLinks: {
-            website: '',
-            whitepaper: '',
-            twitter: '',
-            telegram: '',
-            discord: '',
-            github: '',
-            medium: ''
-          }
-        });
+        const successMessage = isEditMode 
+          ? '项目更新成功！您的修改已保存。' 
+          : '项目提交成功！您的项目已添加到平台中。';
+        setSubmitMessage(successMessage);
+        
+        // 如果是新增模式，重置表单
+        if (!isEditMode) {
+          setFormData({
+            name: '',
+            description: '',
+            detailedDescription: '',
+            category: 0,
+            subcategory: 0,
+            url: '',
+            logo: '',
+            tags: [],
+            chains: [],
+            officialLinks: {
+              website: '',
+              whitepaper: '',
+              twitter: '',
+              telegram: '',
+              discord: '',
+              github: '',
+              medium: ''
+            }
+          });
+        }
       } else {
         const error = await response.json();
-        setSubmitMessage(error.message || '提交失败，请稍后重试');
+        setSubmitMessage(error.message || '操作失败，请稍后重试');
       }
     } catch (error) {
-      setSubmitMessage('提交失败，请检查网络连接');
+      setSubmitMessage('操作失败，请检查网络连接');
     } finally {
       setIsSubmitting(false);
     }
@@ -360,7 +406,9 @@ export default function ProjectSubmissionForm() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">提交新项目</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">
+        {isEditMode ? '编辑项目' : '提交新项目'}
+      </h1>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 基本信息 */}
@@ -704,7 +752,10 @@ export default function ProjectSubmissionForm() {
             disabled={isSubmitting}
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? '提交中...' : '提交项目'}
+            {isSubmitting 
+              ? (isEditMode ? '更新中...' : '提交中...') 
+              : (isEditMode ? '更新项目' : '提交项目')
+            }
           </button>
         </div>
 
