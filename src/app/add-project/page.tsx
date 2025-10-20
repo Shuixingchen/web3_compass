@@ -1,12 +1,33 @@
-import { Metadata } from 'next';
-import ProjectSubmissionForm from '@/components/ProjectSubmissionForm';
+'use client';
 
-export const metadata: Metadata = {
-  title: '提交新项目 - Web3 Compass',
-  description: '向 Web3 Compass 提交您的项目，让更多用户发现您的 Web3 应用',
-};
+import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import ProjectSubmissionForm from '@/components/ProjectSubmissionForm';
+import PermissionModal from '@/components/PermissionModal';
 
 export default function AddProjectPage() {
+  const { data: session, status } = useSession();
+  console.log('session', session);
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState<'login' | 'admin'>('login');
+
+  useEffect(() => {
+    if (status === 'loading') return; // 还在加载中
+
+    if (!session) {
+      // 用户未登录
+      setModalType('login');
+      setShowModal(true);
+    } else if (!session.user?.isAdmin) {
+      // 用户已登录但不是管理员
+      setModalType('admin');
+      setShowModal(true);
+    }
+  }, [session, status]);
+
+  // 如果用户已登录且是管理员，显示正常页面
+  const canSubmitProject = session && session.user?.isAdmin;
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
@@ -33,8 +54,23 @@ export default function AddProjectPage() {
           </ul>
         </div>
 
-        <ProjectSubmissionForm />
+        {canSubmitProject ? (
+          <ProjectSubmissionForm />
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-gray-500">
+              {status === 'loading' ? '正在验证权限...' : '请先完成身份验证'}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* 权限弹窗 */}
+      <PermissionModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        type={modalType}
+      />
     </div>
   );
 }

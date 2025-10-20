@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './api/auth/[...nextauth]/route';
-import { getProjects, getCategories } from '@/lib/data-access';
+import { getProjects, getCategories, getChains } from '@/lib/data-access';
 import HomeClient from './HomeClient';
 
 export default async function Home() {
@@ -10,9 +10,10 @@ export default async function Home() {
   const userId = session?.user?.id as string | undefined;
 
   // 在服务器端获取数据
-  const [projects, categories] = await Promise.all([
+  const [projects, categories, chains] = await Promise.all([
     getProjects(userId),
-    getCategories()
+    getCategories(),
+    getChains()
   ]);
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
@@ -21,7 +22,7 @@ export default async function Home() {
         <p className="text-gray-600">加载中...</p>
       </div>
     </div>}>
-      <HomeClient projects={projects} categories={categories} />
+      <HomeClient projects={projects} categories={categories} chains={chains} />
     </Suspense>
   );
 }

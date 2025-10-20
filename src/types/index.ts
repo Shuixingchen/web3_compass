@@ -14,8 +14,10 @@ export interface Web3Project {
   name: string;
   description: string;
   detailedDescription?: string; // 详细介绍，约500字
-  category: string;
-  subcategory?: string;
+  category: number;
+  categoryName: string;
+  subcategory?: number;
+  subcategoryName?: string;
   url: string;
   logo?: string;
   tags: string[]; // 项目标签数组，存储为JSON格式
@@ -35,20 +37,26 @@ export interface Web3Project {
 }
 
 export interface Category {
-  id: string;
+  id: number;
   name: string;
   icon: string;
   subcategories?: Subcategory[];
 }
 
 export interface Subcategory {
-  id: string;
+  id: number;
   name: string;
   count: number;
 }
 
 export interface SearchFilters {
-  category: string;
-  subcategory: string;
+  category: number;
+  subcategory: number;
   tags: string[];
+}
+
+export interface Chain {
+  symbol: string;
+  name: string;
+  sort: number;
 }

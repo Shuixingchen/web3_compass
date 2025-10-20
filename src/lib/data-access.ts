@@ -1,5 +1,5 @@
 import { executeQuery, executeQuerySingle } from './database';
-import { Web3Project, Category, ProjectNews, Subcategory } from '@/types';
+import { Web3Project, Category, ProjectNews, Subcategory, Chain } from '@/types';
 
 // 数据库字段到接口的映射
 interface DbProject {
@@ -7,8 +7,8 @@ interface DbProject {
   name: string;
   description: string;
   detailed_description?: string;
-  category: string;
-  subcategory?: string;
+  category: number;
+  subcategory: number;
   url: string;
   logo?: string;
   view_count: number;
@@ -51,6 +51,12 @@ interface DbBookmark {
   created_at: string;
 }
 
+interface DbChain {
+  chain_symbol: string;
+  chain_name: string;
+  sort: number;
+}
+
 // 获取所有分类
 export async function getCategories(): Promise<Category[]> {
   try {
@@ -69,13 +75,13 @@ export async function getCategories(): Promise<Category[]> {
       const subcategories: Subcategory[] = subCategories
         .filter(sub => sub.parent_id === cat.id)
         .map(sub => ({
-          id: sub.slug,
+          id: parseInt(sub.id),
           name: sub.name,
           count: sub.project_count
         }));
 
       return {
-        id: cat.slug,
+        id: parseInt(cat.id),
         name: cat.name,
         icon: cat.icon,
         subcategories
@@ -85,6 +91,28 @@ export async function getCategories(): Promise<Category[]> {
     return categories;
   } catch (error) {
     console.error('获取分类失败:', error);
+    throw error;
+  }
+}
+
+// 获取所有链
+export async function getChains(): Promise<Chain[]> {
+  try {
+    const query = `
+      SELECT chain_symbol, chain_name, sort
+      FROM web3_chains
+      ORDER BY sort ASC
+    `;
+    
+    const dbChains = await executeQuery<DbChain>(query);
+    
+    return dbChains.map(chain => ({
+      symbol: chain.chain_symbol,
+      name: chain.chain_name,
+      sort: chain.sort
+    }));
+  } catch (error) {
+    console.error('获取链数据失败:', error);
     throw error;
   }
 }
@@ -108,6 +136,14 @@ export async function getProjects(userId?: string): Promise<Web3Project[]> {
     }
     console.log('用户ID:', userId);
     console.log('用户收藏列表:', userBookmarks);
+    // 获取项目分类数据
+    const categories = await executeQuery<DbCategory>(
+      'SELECT * FROM web3_categories'
+    );
+    const categoriesMap = categories.reduce((acc, cat) => {
+      acc[cat.id] = cat;
+      return acc;
+    }, {} as Record<string, DbCategory>);
     // 组装项目数据
     const result: Web3Project[] = projects.map(project => {
       // 解析项目标签JSON
@@ -152,7 +188,9 @@ export async function getProjects(userId?: string): Promise<Web3Project[]> {
         description: project.description,
         detailedDescription: project.detailed_description,
         category: project.category,
+        categoryName: categoriesMap[project.category]?.name || '',
         subcategory: project.subcategory,
+        subcategoryName: categoriesMap[project.subcategory]?.name || '',
         url: project.url,
         logo: project.logo,
         tags,
@@ -182,7 +220,13 @@ export async function getProjectById(id: string): Promise<Web3Project | null> {
     if (!project) {
       return null;
     }
-
+    const categories = await executeQuery<DbCategory>(
+      'SELECT * FROM web3_categories'
+    );
+    const categoriesMap = categories.reduce((acc, cat) => {
+      acc[cat.id] = cat;
+      return acc;
+    }, {} as Record<string, DbCategory>);
     // 解析项目标签JSON
     let tags: string[] = [];
     try {
@@ -213,7 +257,9 @@ export async function getProjectById(id: string): Promise<Web3Project | null> {
       description: project.description,
       detailedDescription: project.detailed_description,
       category: project.category,
+      categoryName: categoriesMap[project.category]?.name || '',
       subcategory: project.subcategory,
+      subcategoryName: categoriesMap[project.subcategory]?.name || '',  
       url: project.url,
       logo: project.logo,
       tags,
@@ -229,7 +275,7 @@ export async function getProjectById(id: string): Promise<Web3Project | null> {
 }
 
 // 根据分类获取项目
-export async function getProjectsByCategory(category: string, subcategory?: string, userId?: string): Promise<Web3Project[]> {
+export async function getProjectsByCategory(category: number, subcategory?: number, userId?: string): Promise<Web3Project[]> {
   try {
     let query = 'SELECT * FROM web3_projects WHERE category = ?';
     const params: any[] = [category];
@@ -243,6 +289,16 @@ export async function getProjectsByCategory(category: string, subcategory?: stri
 
     const projects = await executeQuery<DbProject>(query, params);
 
+    // 获取所有分类信息
+    const categories = await executeQuery<DbCategory>(
+      'SELECT id, name FROM web3_categories'
+    );
+    
+    const categoriesMap = categories.reduce((acc, cat) => {
+      acc[cat.id] = cat;
+      return acc;
+    }, {} as Record<string, DbCategory>);
+
     // 如果提供了用户ID，获取用户的收藏列表
     let userBookmarks: Set<string> = new Set();
     if (userId) {
@@ -253,27 +309,6 @@ export async function getProjectsByCategory(category: string, subcategory?: stri
       userBookmarks = new Set(bookmarks.map(b => b.project_id));
     }
 
-    // 获取所有项目的新闻
-    const projectIds = projects.map(p => p.id);
-    let allNews: DbNews[] = [];
-    
-    if (projectIds.length > 0) {
-      const placeholders = projectIds.map(() => '?').join(',');
-      allNews = await executeQuery<DbNews>(
-        `SELECT * FROM web3_news WHERE project_id IN (${placeholders}) ORDER BY published_at DESC`,
-        projectIds
-      );
-    }
-
-    // 按项目ID分组新闻
-    const newsByProject = allNews.reduce((acc, news) => {
-      if (!acc[news.project_id!]) {
-        acc[news.project_id!] = [];
-      }
-      acc[news.project_id!].push(news);
-      return acc;
-    }, {} as Record<string, DbNews[]>);
-
     const result: Web3Project[] = projects.map(project => {
       // 解析项目标签JSON
       let tags: string[] = [];
@@ -283,7 +318,7 @@ export async function getProjectsByCategory(category: string, subcategory?: stri
         tags = [];
       }
 
-      // 解析项目链JSON
+      // 解析区块链JSON
       let chains: string[] = [];
       try {
         chains = project.chains ? JSON.parse(project.chains) : [];
@@ -299,30 +334,21 @@ export async function getProjectsByCategory(category: string, subcategory?: stri
         officialLinks = undefined;
       }
 
-      // 获取该项目的新闻
-      const projectNews = newsByProject[project.id] || [];
-
       return {
         id: project.id,
         name: project.name,
         description: project.description,
         detailedDescription: project.detailed_description,
         category: project.category,
+        categoryName: categoriesMap[project.category]?.name || '',
         subcategory: project.subcategory,
+        subcategoryName: categoriesMap[project.subcategory]?.name || '',
         url: project.url,
         logo: project.logo,
         tags,
         chains,
         viewCount: project.view_count,
         isBookmarked: userId ? userBookmarks.has(project.id) : undefined,
-        news: projectNews.map(n => ({
-          id: n.id,
-          title: n.title,
-          summary: n.summary,
-          publishedAt: n.published_at,
-          url: n.url,
-          source: n.source
-        })),
         officialLinks
       };
     });
@@ -339,11 +365,20 @@ export async function searchProjects(keyword: string): Promise<Web3Project[]> {
   try {
     const projects = await executeQuery<DbProject>(
       `SELECT * FROM web3_projects 
-       WHERE MATCH(name, description) AGAINST(? IN NATURAL LANGUAGE MODE)
-       OR name LIKE ? OR description LIKE ?
+       WHERE name LIKE ? OR description LIKE ? OR tags LIKE ?
        ORDER BY view_count DESC, created_at DESC`,
-      [keyword, `%${keyword}%`, `%${keyword}%`]
+      [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`]
     );
+
+    // 获取所有分类信息
+    const categories = await executeQuery<DbCategory>(
+      'SELECT id, name FROM web3_categories'
+    );
+    
+    const categoriesMap = categories.reduce((acc, cat) => {
+      acc[cat.id] = cat;
+      return acc;
+    }, {} as Record<string, DbCategory>);
 
     const result: Web3Project[] = projects.map(project => {
       // 解析项目标签JSON
@@ -354,7 +389,7 @@ export async function searchProjects(keyword: string): Promise<Web3Project[]> {
         tags = [];
       }
 
-      // 解析项目链JSON
+      // 解析区块链JSON
       let chains: string[] = [];
       try {
         chains = project.chains ? JSON.parse(project.chains) : [];
@@ -376,7 +411,9 @@ export async function searchProjects(keyword: string): Promise<Web3Project[]> {
         description: project.description,
         detailedDescription: project.detailed_description,
         category: project.category,
+        categoryName: categoriesMap[project.category]?.name || '',
         subcategory: project.subcategory,
+        subcategoryName: categoriesMap[project.subcategory]?.name || '',
         url: project.url,
         logo: project.logo,
         tags,
@@ -461,113 +498,6 @@ export async function getProjectNews(
     };
   } catch (error) {
     console.error('获取项目新闻失败:', error);
-    throw error;
-  }
-}
-
-
-
-// 获取用户收藏的项目
-export async function getUserBookmarks(userId: string): Promise<Web3Project[]> {
-  try {
-    const bookmarks = await executeQuery<DbProject>(
-      `SELECT p.* FROM web3_projects p 
-       INNER JOIN web3_user_bookmarks b ON p.id = b.project_id 
-       WHERE b.user_id = ? 
-       ORDER BY b.created_at DESC`,
-      [userId]
-    );
-
-    // 获取所有收藏项目的新闻
-    const projectIds = bookmarks.map(p => p.id);
-    let allNews: DbNews[] = [];
-    
-    if (projectIds.length > 0) {
-      const placeholders = projectIds.map(() => '?').join(',');
-      allNews = await executeQuery<DbNews>(
-        `SELECT * FROM web3_news WHERE project_id IN (${placeholders}) ORDER BY published_at DESC`,
-        projectIds
-      );
-    }
-
-    // 按项目ID分组新闻
-    const newsByProject = allNews.reduce((acc, news) => {
-      if (!acc[news.project_id!]) {
-        acc[news.project_id!] = [];
-      }
-      acc[news.project_id!].push(news);
-      return acc;
-    }, {} as Record<string, DbNews[]>);
-
-    const result: Web3Project[] = bookmarks.map(project => {
-      // 解析项目标签JSON
-      let tags: string[] = [];
-      try {
-        tags = project.tags ? JSON.parse(project.tags) : [];
-      } catch {
-        tags = [];
-      }
-
-      // 解析项目链JSON
-      let chains: string[] = [];
-      try {
-        chains = project.chains ? JSON.parse(project.chains) : [];
-      } catch {
-        chains = [];
-      }
-
-      // 解析官方链接JSON
-      let officialLinks;
-      try {
-        officialLinks = project.official_links ? JSON.parse(project.official_links) : undefined;
-      } catch {
-        officialLinks = undefined;
-      }
-
-      // 获取该项目的新闻
-      const projectNews = newsByProject[project.id] || [];
-
-      return {
-        id: project.id,
-        name: project.name,
-        description: project.description,
-        detailedDescription: project.detailed_description,
-        category: project.category,
-        subcategory: project.subcategory,
-        url: project.url,
-        logo: project.logo,
-        tags,
-        chains,
-        viewCount: project.view_count,
-        news: projectNews.map(n => ({
-          id: n.id,
-          title: n.title,
-          summary: n.summary,
-          publishedAt: n.published_at,
-          url: n.url,
-          source: n.source
-        })),
-        officialLinks
-      };
-    });
-
-    return result;
-  } catch (error) {
-    console.error('获取用户收藏失败:', error);
-    throw error;
-  }
-}
-
-// 检查用户是否收藏了某个项目
-export async function isProjectBookmarked(userId: string, projectId: string): Promise<boolean> {
-  try {
-    const bookmark = await executeQuerySingle<DbBookmark>(
-      'SELECT id FROM web3_user_bookmarks WHERE user_id = ? AND project_id = ?',
-      [userId, projectId]
-    );
-    return !!bookmark;
-  } catch (error) {
-    console.error('检查收藏状态失败:', error);
     throw error;
   }
 }

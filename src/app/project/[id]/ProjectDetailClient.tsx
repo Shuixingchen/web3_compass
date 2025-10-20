@@ -93,11 +93,11 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
                   {/* 分类和标签 */}
                   <div className="flex flex-wrap gap-2 mb-6">
                     <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                      {project.category}
+                      {project.categoryName}
                     </span>
-                    {project.subcategory && (
+                    {project.subcategoryName && (
                       <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
-                        {project.subcategory}
+                        {project.subcategoryName}
                       </span>
                     )}
                     {project.tags.map((tag, index) => (

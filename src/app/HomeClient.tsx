@@ -7,16 +7,17 @@ import Sidebar from '@/components/Sidebar';
 import SearchBar from '@/components/SearchBar';
 import FilterDropdown from '@/components/FilterDropdown';
 import ProjectCard from '@/components/ProjectCard';
-import { Web3Project, Category } from '@/types';
+import { Web3Project, Category, Chain } from '@/types';
 
 interface HomeClientProps {
   projects: Web3Project[];
   categories: Category[];
+  chains: Chain[];
 }
 
-export default function HomeClient({ projects, categories }: HomeClientProps) {
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+export default function HomeClient({ projects, categories, chains }: HomeClientProps) {
+  const [selectedCategory, setSelectedCategory] = useState(0);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
   // console.log('projects', projects);
@@ -25,12 +26,12 @@ export default function HomeClient({ projects, categories }: HomeClientProps) {
     let filtered = projects;
 
     // 按分类筛选
-    if (selectedCategory) {
+    if (selectedCategory && selectedCategory > 0) {
       filtered = filtered.filter(project => project.category === selectedCategory);
     }
 
     // 按子分类筛选
-    if (selectedSubcategory) {
+    if (selectedSubcategory && selectedSubcategory > 0) {
       filtered = filtered.filter(project => project.subcategory === selectedSubcategory);
     }
 
@@ -57,30 +58,30 @@ export default function HomeClient({ projects, categories }: HomeClientProps) {
     return filtered;
   }, [projects, selectedCategory, selectedSubcategory, searchTerm, sortBy]);
 
-  const handleCategoryChange = (category: string, subcategory?: string) => {
+  const handleCategoryChange = (category: number, subcategory?: number) => {
+    console.log('category', category);
+    console.log('subcategory', subcategory);
     setSelectedCategory(category);
-    setSelectedSubcategory(subcategory || '');
+    setSelectedSubcategory(subcategory || 0);
   };
 
 
   // 链选项
   const chainOptions = [
     { id: 'all', name: '全部链' },
-    { id: 'ethereum', name: 'Ethereum' },
-    { id: 'bsc', name: 'BSC' },
-    { id: 'polygon', name: 'Polygon' },
-    { id: 'arbitrum', name: 'Arbitrum' },
-    { id: 'optimism', name: 'Optimism' }
+    ...(chains || []).map(chain => ({
+      id: chain.symbol.toLowerCase(),
+      name: chain.name
+    }))
   ];
 
   // 目录选项
   const directoryOptions = [
     { id: 'all', name: '全部目录' },
-    { id: 'defi', name: 'DeFi' },
-    { id: 'nft', name: 'NFT' },
-    { id: 'dao', name: 'DAO' },
-    { id: 'infrastructure', name: '基础设施' },
-    { id: 'tools', name: '工具' }
+    ...(categories || []).map(category => ({
+      id: category.id.toString(),
+      name: category.name
+    }))
   ];
 
   // 排序选项
@@ -94,7 +95,7 @@ export default function HomeClient({ projects, categories }: HomeClientProps) {
 
   // 获取当前分类信息
   const currentCategory = categories.find(cat => cat.id === selectedCategory);
-  const categoryName = selectedCategory ? currentCategory?.name : '全部项目';
+  const categoryName = selectedCategory && selectedCategory > 0 ? currentCategory?.name : '全部项目';
 
   return (
     <div className="flex min-h-screen bg-gray-50">

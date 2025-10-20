@@ -49,8 +49,8 @@ interface ProjectSubmissionData {
   name: string;
   description: string;
   detailedDescription: string;
-  category: string;
-  subcategory: string;
+  category: number;
+  subcategory: number;
   url: string;
   logo: string;
   tags: string[];
@@ -177,9 +177,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 获取分类和子分类ID
-    const categoryId = await getCategoryIdBySlug(data.category);
-    const subcategoryId = await getSubcategoryIdBySlug(data.subcategory);
+    // 直接使用分类和子分类ID
+    const categoryId = data.category;
+    const subcategoryId = data.subcategory;
     
     if (!categoryId || !subcategoryId) {
       return NextResponse.json(

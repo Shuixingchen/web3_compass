@@ -7,8 +7,8 @@ interface ProjectSubmissionData {
   name: string;
   description: string;
   detailedDescription: string;
-  category: string;
-  subcategory: string;
+  category: number;
+  subcategory: number;
   url: string;
   logo: string;
   tags: string[];
@@ -90,8 +90,8 @@ export default function ProjectSubmissionForm() {
     name: '',
     description: '',
     detailedDescription: '',
-    category: '',
-    subcategory: '',
+    category: 0,
+    subcategory: 0,
     url: '',
     logo: '',
     tags: [],
@@ -147,9 +147,14 @@ export default function ProjectSubmissionForm() {
   };
 
   const handleInputChange = (field: string, value: string) => {
+    // 对于category和subcategory字段，需要转换为number类型
+    const processedValue = (field === 'category' || field === 'subcategory') 
+      ? parseInt(value) || 0 
+      : value;
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: processedValue
     }));
     
     // 实时验证
@@ -326,8 +331,8 @@ export default function ProjectSubmissionForm() {
           name: '',
           description: '',
           detailedDescription: '',
-          category: '',
-          subcategory: '',
+          category: 0,
+          subcategory: 0,
           url: '',
           logo: '',
           tags: [],
@@ -462,12 +467,12 @@ export default function ProjectSubmissionForm() {
               value={formData.category}
               onChange={(e) => {
                 handleInputChange('category', e.target.value);
-                handleInputChange('subcategory', ''); // 重置子分类
+                handleInputChange('subcategory', '0'); // 重置子分类
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoadingCategories}
             >
-              <option value="">{isLoadingCategories ? '加载中...' : '选择分类'}</option>
+              <option value="0">{isLoadingCategories ? '加载中...' : '选择分类'}</option>
               {categories.map(category => (
                 <option key={category.id} value={category.id}>
                   {category.icon} {category.name}
@@ -486,7 +491,7 @@ export default function ProjectSubmissionForm() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={!selectedCategory}
             >
-              <option value="">选择子分类</option>
+              <option value="0">选择子分类</option>
               {selectedCategory?.subcategories?.map(subcategory => (
                 <option key={subcategory.id} value={subcategory.id}>
                   {subcategory.name}

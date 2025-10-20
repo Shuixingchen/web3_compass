@@ -60,9 +60,21 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      // 将用户ID添加到session
+      // 将用户ID添加到session，并实时查询管理员权限
       if (token.userId && session.user) {
         session.user.id = token.userId as string;
+        
+        // 每次都查询数据库获取最新的管理员权限
+        try {
+          const dbUser = await executeQuerySingle(
+            'SELECT is_admin FROM web3_users WHERE id = ?',
+            [token.userId]
+          );
+          session.user.isAdmin = dbUser ? dbUser.is_admin === 1 : false;
+        } catch (error) {
+          console.error('Error fetching user admin status:', error);
+          session.user.isAdmin = false;
+        }
       }
       return session
     },

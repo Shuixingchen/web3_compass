@@ -8,9 +8,9 @@ import clsx from 'clsx';
 
 interface SidebarProps {
   categories: Category[];
-  selectedCategory: string;
-  selectedSubcategory: string;
-  onCategoryChange: (category: string, subcategory?: string) => void;
+  selectedCategory: number;
+  selectedSubcategory: number;
+  onCategoryChange: (category: number, subcategory?: number) => void;
 }
 
 export default function Sidebar({ 
@@ -19,10 +19,10 @@ export default function Sidebar({
   selectedSubcategory, 
   onCategoryChange 
 }: SidebarProps) {
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = (categoryId: number) => {
     setExpandedCategories(prev => 
       prev.includes(categoryId) 
         ? prev.filter(id => id !== categoryId)
@@ -30,13 +30,13 @@ export default function Sidebar({
     );
   };
 
-  const handleCategoryClick = (categoryId: string) => {
+  const handleCategoryClick = (categoryId: number) => {
     // 点击分类时同时选择分类和控制展开/收起
     onCategoryChange(categoryId);
     toggleCategory(categoryId);
   };
 
-  const handleSubcategoryClick = (categoryId: string, subcategoryId: string) => {
+  const handleSubcategoryClick = (categoryId: number, subcategoryId: number) => {
     onCategoryChange(categoryId, subcategoryId);
   };
 
@@ -79,6 +79,25 @@ export default function Sidebar({
       <div className="p-4">
         
         <nav className="space-y-2">
+          {/* 全部选项 */}
+          <Tooltip content="全部项目" disabled={!isCollapsed}>
+            <button
+              onClick={() => onCategoryChange(0)}
+              className={clsx(
+                'w-full flex items-center px-3 py-2 text-left rounded-lg transition-colors',
+                selectedCategory === 0
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  : 'text-gray-700 hover:bg-gray-50',
+                isCollapsed ? 'justify-center' : 'justify-between'
+              )}
+            >
+              <div className={clsx('flex items-center', isCollapsed ? 'justify-center' : '')}>
+                <span className={clsx(isCollapsed ? '' : 'mr-3')}>🌐</span>
+                {!isCollapsed && <span className="font-medium">全部项目</span>}
+              </div>
+            </button>
+          </Tooltip>
+
           {/* 分类导航 */}
           {categories.map((category) => {
             const isExpanded = expandedCategories.includes(category.id);
